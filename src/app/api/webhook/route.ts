@@ -33,9 +33,9 @@ export async function POST(request: Request) {
 
     // Convert balanceWei to a regular number (if it's safe to do so)
     const balanceWeiNumber = Number(balanceWei);
+    const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth}\nHave a great day! 👋🏻`;
+    await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
     if (Number.isSafeInteger(balanceWeiNumber)) {
-      const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth}\nHave a great day! 👋🏻`;
-      await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
       return NextResponse.json(
         { balanceWei: balanceWeiNumber, balanceEth },
         {
@@ -43,11 +43,10 @@ export async function POST(request: Request) {
         }
       );
     } else {
-      const message = 'Balance is too large to convert to a number';
-      await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
       // Handle the case where the balanceWei is too large for Number
       return NextResponse.json(
-        {
+        { 
+          message:  'Balance is too large to convert to a number',
           status: 200,
         }
       );
