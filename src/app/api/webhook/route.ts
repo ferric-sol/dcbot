@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'Invalid Ethereum address' },
       {
-        status: 400,
+        status: 200,
       }
     );
   }
