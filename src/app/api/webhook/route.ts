@@ -4,13 +4,16 @@ import Web3 from 'web3';
 import TelegramBot from 'node-telegram-bot-api';
 
 const app = express();
+
 const web3 = new Web3('https://eth-mainnet.g.alchemy.com/v2/YN54Eaz5Mz5wsaGdqmEYjc2RGAExwREZ');
 const bot = new TelegramBot('6341931544:AAEH6yep5M6mkSCto0WQSnK_IzoXaI-hMGw');
 
-export async function POST(request: any) {
-  const { body } = request;
-  console.log('body: ', body);
-  const { chat: { id }, ethAddress } = body.message;
+export async function POST(request: Request) {
+  const body = await request.json();
+  const { chat: { id }, text } = body.message;
+
+  let ethAddress = text;
+  ethAddress = ethAddress.replace('@devconnect_griffith_bot ', '');
 
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
     return NextResponse.json(
