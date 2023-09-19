@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import express from 'express';
 import Web3 from 'web3';
+import TelegramBot from 'node-telegram-bot-api';
 
 const app = express();
 const web3 = new Web3('https://eth-mainnet.g.alchemy.com/v2/YN54Eaz5Mz5wsaGdqmEYjc2RGAExwREZ');
+const bot = new TelegramBot('6341931544:AAEH6yep5M6mkSCto0WQSnK_IzoXaI-hMGw');
 
-export async function GET(request: any) {
-  const { searchParams } = new URL(request.url);
-  const hasAddress = searchParams.has('address');
-  const ethAddress = hasAddress ? searchParams.get('address') : null;
+export async function POST(request: any) {
+  const { body } = request;
+  const { chat: { id }, ethAddress } = body.message;
 
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
     return NextResponse.json(
