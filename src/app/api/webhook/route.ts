@@ -27,6 +27,8 @@ export async function POST(request: any) {
     // Convert balanceWei to a regular number (if it's safe to do so)
     const balanceWeiNumber = Number(balanceWei);
     if (Number.isSafeInteger(balanceWeiNumber)) {
+      const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth}\nHave a great day! 👋🏻`;
+      await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
       return NextResponse.json(
         { balanceWei: balanceWeiNumber, balanceEth },
         {
