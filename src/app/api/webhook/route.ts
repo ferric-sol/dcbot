@@ -9,6 +9,7 @@ const bot = new TelegramBot('6341931544:AAEH6yep5M6mkSCto0WQSnK_IzoXaI-hMGw');
 
 export async function POST(request: any) {
   const { body } = request;
+  console.log('body: ', body);
   const { chat: { id }, ethAddress } = body.message;
 
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
