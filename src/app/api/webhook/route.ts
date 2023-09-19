@@ -43,11 +43,12 @@ export async function POST(request: Request) {
         }
       );
     } else {
+      const message = 'Balance is too large to convert to a number';
+      await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
       // Handle the case where the balanceWei is too large for Number
       return NextResponse.json(
-        { error: 'Balance is too large to convert to a number' },
         {
-          status: 500,
+          status: 200,
         }
       );
     }
