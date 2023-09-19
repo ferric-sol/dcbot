@@ -12,8 +12,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { chat: { id }, text } = body.message;
 
-  let ethAddress = text;
-  ethAddress = ethAddress.replace('@devconnect_griffith_bot ', '');
+  let ethAddressOrEns = text;
+  ethAddressOrEns = ethAddressOrEns.replace('@devconnect_griffith_bot ', '');
+
+  const ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
+
 
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
     return NextResponse.json(
