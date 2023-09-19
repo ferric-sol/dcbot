@@ -23,12 +23,24 @@ export async function GET(request: any) {
     const balanceWei = await web3.eth.getBalance(ethAddress);
     const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
 
-    return NextResponse.json(
-      { balanceWei, balanceEth },
-      {
-        status: 200,
-      }
-    );
+    // Convert balanceWei to a regular number (if it's safe to do so)
+    const balanceWeiNumber = Number(balanceWei);
+    if (Number.isSafeInteger(balanceWeiNumber)) {
+      return NextResponse.json(
+        { balanceWei: balanceWeiNumber, balanceEth },
+        {
+          status: 200,
+        }
+      );
+    } else {
+      // Handle the case where the balanceWei is too large for Number
+      return NextResponse.json(
+        { error: 'Balance is too large to convert to a number' },
+        {
+          status: 500,
+        }
+      );
+    }
   } catch (error) {
     console.error(error);
     return NextResponse.json(
