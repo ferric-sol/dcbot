@@ -19,10 +19,28 @@ export async function POST(request: Request) {
 
   if(ethAddressOrEns.startsWith('/')) {
     if(ethAddressOrEns.startsWith('/balanceaddr')) {
-      ethAddressOrEns = ethAddressOrEns.replace('/balanceaddr ', '');
+      ethAddressOrEns = ethAddressOrEns.replace('/balanceaddr', '');
+      ethAddressOrEns = ethAddressOrEns.trim();
+      if(!ethAddressOrEns) {
+        return NextResponse.json(
+          { error: 'Invalid Ethereum address' },
+          {
+            status: 200,
+          }
+        );
+      }
       ethAddress = ethAddressOrEns;
     } else if(ethAddressOrEns.startsWith('/balance')) {
-      ethAddressOrEns = ethAddressOrEns.replace('/balance ', '');
+      ethAddressOrEns = ethAddressOrEns.replace('/balance', '');
+      ethAddressOrEns = ethAddressOrEns.trim();
+      if(ethAddressOrEns.length <= 0) {
+        return NextResponse.json(
+          { error: 'Invalid Ethereum address' },
+          {
+            status: 200,
+          }
+        );
+      }
       ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
     } else {
       return NextResponse.json(
