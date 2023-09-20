@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import express from 'express';
-import Web3 from 'web3';
+import Web3, { eth } from 'web3';
 import TelegramBot from 'node-telegram-bot-api';
 
 const app = express();
@@ -15,10 +15,30 @@ export async function POST(request: Request) {
   let ethAddressOrEns = text;
   ethAddressOrEns = ethAddressOrEns.replace('@devconnect_griffith_bot ', '');
 
-  const ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
+  let ethAddress = null;
 
+  if(ethAddressOrEns.startsWith('/')) {
+    if(ethAddressOrEns.startsWith('/balanceaddr')) {
+      ethAddressOrEns = ethAddressOrEns.replace('/balanceaddr ', '');
+      ethAddress = ethAddressOrEns;
+    } else if(ethAddressOrEns.startsWith('/balance')) {
+      ethAddressOrEns = ethAddressOrEns.replace('/balance ', '');
+      ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid Ethereum address' },
+        {
+          status: 200,
+        }
+      );
+    }
+  } else {
+    ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
+  }
 
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
+    const message = 'Address not understood';
+    await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
     return NextResponse.json(
       { error: 'Invalid Ethereum address' },
       {
@@ -53,10 +73,12 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error(error);
+    const message = 'Address not understood';
+    await bot.sendMessage(id, message, {parse_mode: 'Markdown'});
     return NextResponse.json(
-      { error: 'Server error' },
+      { error: 'Invalid Ethereum address' },
       {
-        status: 500,
+        status: 200,
       }
     );
   }
