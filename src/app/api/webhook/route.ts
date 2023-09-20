@@ -3,12 +3,19 @@ import Web3 from 'web3';
 import TelegramBot from 'node-telegram-bot-api';
 import { createClient } from '@vercel/kv';
 
-const web3 = new Web3('https://eth-mainnet.g.alchemy.com/v2/YN54Eaz5Mz5wsaGdqmEYjc2RGAExwREZ');
-const bot = new TelegramBot('6341931544:AAEH6yep5M6mkSCto0WQSnK_IzoXaI-hMGw');
+const { KV_REST_API_URL, KV_REST_API_TOKEN, ALCHEMY_URL, TELEGRAM_API_KEY } = process.env;
+
+if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !ALCHEMY_URL || !TELEGRAM_API_KEY) {
+  throw new Error('Environment variables KV_REST_API_URL and KV_REST_API_TOKEN and ALCHEMY_URL and TELEGRAM_API_KEY must be defined');
+}
+
+const web3 = new Web3(ALCHEMY_URL)
+const bot = new TelegramBot(TELEGRAM_API_KEY)
+
 
 const kv = createClient({
-  url: process.env.KV_REST_API_URL,
-  token: process.env.KV_REST_API_TOKEN,
+  url: KV_REST_API_URL,
+  token: KV_REST_API_TOKEN,
 });
 
 function sendErrorResponse() {
@@ -20,7 +27,8 @@ function sendErrorResponse() {
   );
 }
 
-async function handleCommand(id, text, username) {
+async function handleCommand(id: any, text: string, username: string) {
+
   let ethAddressOrEns = text.replace('@devconnect_griffith_bot ', '').trim();
   let ethAddress = null;
 
@@ -110,7 +118,7 @@ async function handleCommand(id, text, username) {
   }
 }
 
-export async function POST(request) {
+export async function POST(request: Request) {
   const body = await request.json();
   const { chat: { id }, text, entities, message: { from: { username } } } = body;
 
