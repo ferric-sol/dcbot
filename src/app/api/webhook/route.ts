@@ -71,8 +71,6 @@ async function handleCommand(id: string, text: string, username: string) {
   let ethAddress = null;
   let keyPair: keyPair | null = await kv.get(`user:${username}`);
 
-  console.log('keypair: ', keyPair);
-
   switch (true) {
     case ethAddressOrEns.startsWith('/balanceaddr'):
       ethAddress = ethAddressOrEns.replace('/balanceaddr', '').trim();
@@ -107,9 +105,8 @@ async function handleCommand(id: string, text: string, username: string) {
           console.error('Error storing the key pair:', error);
         }
       }
-      console.log('id: ', id);
       try {
-        const message = `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`;
+        const message = `✅ Key pair generated successfully:\n- Address: ${keyPair.address}`;
         await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
       } catch (error) {
         console.error('Error sending message:', error);
