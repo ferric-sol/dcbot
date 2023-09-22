@@ -15,7 +15,7 @@ if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !ALCHEMY_URL || !TELEGRAM_API_KEY)
 }
 
 const web3 = new Web3(ALCHEMY_URL)
-const bot = new TelegramBot(TELEGRAM_API_KEY)
+const bot = new TelegramBot(TELEGRAM_API_KEY.trim());
 
 
 const kv = createClient({
@@ -105,17 +105,12 @@ async function handleCommand(id: string, text: string, username: string) {
           await kv.set(`user:${username}`, JSON.stringify(keyPair));
         } catch (error) {
           console.error('Error storing the key pair:', error);
-          return NextResponse.json(
-            { error: 'Error storing the key pair' },
-            {
-              status: 500,
-            }
-          );
         }
       }
       console.log('id: ', id);
       try {
-        await bot.sendMessage(id, `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`);
+        const message = `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`;
+        await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
       } catch (error) {
         console.error('Error sending message:', error);
       }
@@ -136,8 +131,6 @@ export async function POST(request: Request) {
   const body = await request.json();
   const message = body.message;
   const { chat: { id }, text, entities, from: { username } } = message;
-
-  await bot.sendMessage(id, `✅ Gotcha: ${text}`);
 
   if(entities && entities[0].type === 'bot_command') {
     return handleCommand(id, text, username);
