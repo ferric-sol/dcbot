@@ -67,7 +67,7 @@ async function returnBalance(ethAddress: string, id: string) {
 }
 
 async function handleCommand(id: string, text: string, username: string) {
-  let ethAddressOrEns = text.replace('@devconnect_griffith_bot ', '').trim();
+  let ethAddressOrEns = text.replace('@devconnect_griffith_bot', '').trim();
   let ethAddress = null;
   let keyPair: keyPair | null = await kv.get(`user:${username}`);
 
