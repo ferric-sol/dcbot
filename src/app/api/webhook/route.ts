@@ -27,7 +27,7 @@ async function sendErrorResponse(id: string) {
   const message = 'Invalid Ethereum address';
   await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
   return NextResponse.json(
-    { error: message }
+    { error: message },
     {
       status: 200,
     }
