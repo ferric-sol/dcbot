@@ -3,6 +3,11 @@ import Web3 from 'web3';
 import TelegramBot from 'node-telegram-bot-api';
 import { createClient } from '@vercel/kv';
 
+interface keyPair {
+  address: string;
+  privateKey: string;
+}
+
 const { KV_REST_API_URL, KV_REST_API_TOKEN, ALCHEMY_URL, TELEGRAM_API_KEY } = process.env;
 
 if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !ALCHEMY_URL || !TELEGRAM_API_KEY) {
@@ -18,73 +23,22 @@ const kv = createClient({
   token: KV_REST_API_TOKEN,
 });
 
-function sendErrorResponse() {
+async function sendErrorResponse(id: string) {
+  const message = 'Invalid Ethereum address';
+  await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
   return NextResponse.json(
-    { error: 'Invalid Ethereum address' },
+    { error: message }
     {
       status: 200,
     }
   );
 }
 
-async function handleCommand(id: any, text: string, username: string) {
-
-  let ethAddressOrEns = text.replace('@devconnect_griffith_bot ', '').trim();
-  let ethAddress = null;
-
-  switch (true) {
-    case ethAddressOrEns.startsWith('/balanceaddr'):
-      ethAddressOrEns = ethAddressOrEns.replace('/balanceaddr', '').trim();
-      if (!ethAddressOrEns) {
-        return sendErrorResponse();
-      }
-      ethAddress = ethAddressOrEns;
-      break;
-
-    case ethAddressOrEns.startsWith('/balance'):
-      ethAddressOrEns = ethAddressOrEns.replace('/balance', '').trim();
-      if (ethAddressOrEns.length <= 0) {
-        return sendErrorResponse();
-      }
-      ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
-      break;
-
-    case ethAddressOrEns.startsWith('/generate'):
-      const account = web3.eth.accounts.create();
-      const keyPair = {
-        address: account.address,
-        privateKey: account.privateKey,
-      };
-
-      try {
-        await kv.set(`user:${username}`, JSON.stringify(keyPair), { ex: 100, nx: true });
-      } catch (error) {
-        console.error('Error storing the key pair:', error);
-        return NextResponse.json(
-          { error: 'Error storing the key pair' },
-          {
-            status: 500,
-          }
-        );
-      }
-
-      await bot.sendMessage(id, `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n- Private Key: ${keyPair.privateKey}`, { parse_mode: 'Markdown' });
-      return NextResponse.json(
-        { keyPair },
-        {
-          status: 200,
-        }
-      );
-      break;
-
-    default:
-      return sendErrorResponse();
-  }
-
+async function returnBalance(ethAddress: string, id: string) {
   if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
     const message = 'Address not understood';
     await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
-    return sendErrorResponse();
+    return sendErrorResponse(id);
   }
 
   try {
@@ -103,19 +57,74 @@ async function handleCommand(id: any, text: string, username: string) {
         }
       );
     } else {
-      return NextResponse.json(
-        { 
-          message: 'Balance is too large to convert to a number',
-          status: 200,
-        }
-      );
     }
   } catch (error) {
     console.error(error);
     const message = 'Error fetching balance';
     await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
-    return sendErrorResponse();
+    return sendErrorResponse(id);
   }
+}
+
+async function handleCommand(id: any, text: string, username: string) {
+
+  let ethAddressOrEns = text.replace('@devconnect_griffith_bot ', '').trim();
+  let ethAddress = null;
+  let keyPair: keyPair | null = await kv.get(`user:${username}`);
+
+  switch (true) {
+    case ethAddressOrEns.startsWith('/balanceaddr'):
+      ethAddress = ethAddressOrEns.replace('/balanceaddr', '').trim();
+      if (ethAddress.length > 0) {
+        returnBalance(ethAddress, id);
+      } else if (keyPair?.address) {
+        returnBalance(keyPair?.address, id);
+      }
+      break;
+
+    case ethAddressOrEns.startsWith('/balance'):
+      ethAddressOrEns = ethAddressOrEns.replace('/balance', '').trim();
+      if (ethAddressOrEns.length > 0) {
+        ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
+        returnBalance(ethAddress, id);
+      } else if (keyPair?.address) {
+        returnBalance(keyPair?.address, id);
+      }
+      break;
+
+    case ethAddressOrEns.startsWith('/generate'):
+      if(!keyPair) { 
+        const account = web3.eth.accounts.create();
+        keyPair = {
+          address: account.address,
+          privateKey: account.privateKey,
+        };
+
+        try {
+          await kv.set(`user:${username}`, JSON.stringify(keyPair));
+        } catch (error) {
+          console.error('Error storing the key pair:', error);
+          return NextResponse.json(
+            { error: 'Error storing the key pair' },
+            {
+              status: 500,
+            }
+          );
+        }
+      }
+
+      await bot.sendMessage(id, `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`);
+      break;
+
+    default:
+      return sendErrorResponse(id);
+  }
+  return NextResponse.json(
+    { 
+      status: 200,
+    }
+  );
+
 }
 
 export async function POST(request: Request) {
@@ -126,5 +135,11 @@ export async function POST(request: Request) {
     return handleCommand(id, text, username);
   }
 
-  // ... (other logic for POST function, if any)
+  // Ignore all other input
+  return NextResponse.json(
+    { 
+      status: 200,
+    }
+  );
+
 }
