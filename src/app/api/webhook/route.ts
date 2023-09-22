@@ -66,19 +66,20 @@ async function returnBalance(ethAddress: string, id: string) {
   }
 }
 
-async function handleCommand(id: any, text: string, username: string) {
-
+async function handleCommand(id: string, text: string, username: string) {
   let ethAddressOrEns = text.replace('@devconnect_griffith_bot ', '').trim();
   let ethAddress = null;
   let keyPair: keyPair | null = await kv.get(`user:${username}`);
+
+  console.log('keypair: ', keyPair);
 
   switch (true) {
     case ethAddressOrEns.startsWith('/balanceaddr'):
       ethAddress = ethAddressOrEns.replace('/balanceaddr', '').trim();
       if (ethAddress.length > 0) {
-        returnBalance(ethAddress, id);
+        await returnBalance(ethAddress, id);
       } else if (keyPair?.address) {
-        returnBalance(keyPair?.address, id);
+        await returnBalance(keyPair?.address, id);
       }
       break;
 
@@ -86,9 +87,9 @@ async function handleCommand(id: any, text: string, username: string) {
       ethAddressOrEns = ethAddressOrEns.replace('/balance', '').trim();
       if (ethAddressOrEns.length > 0) {
         ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
-        returnBalance(ethAddress, id);
+        await returnBalance(ethAddress, id);
       } else if (keyPair?.address) {
-        returnBalance(keyPair?.address, id);
+        await returnBalance(keyPair?.address, id);
       }
       break;
 
@@ -112,12 +113,16 @@ async function handleCommand(id: any, text: string, username: string) {
           );
         }
       }
-
-      await bot.sendMessage(id, `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`);
+      console.log('id: ', id);
+      try {
+        await bot.sendMessage(id, `✅ Key pair generated successfully:\n- Address: ${keyPair.address}\n-`);
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
       break;
 
     default:
-      return sendErrorResponse(id);
+      return await sendErrorResponse(id);
   }
   return NextResponse.json(
     { 
@@ -129,7 +134,10 @@ async function handleCommand(id: any, text: string, username: string) {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { chat: { id }, text, entities, message: { from: { username } } } = body;
+  const message = body.message;
+  const { chat: { id }, text, entities, from: { username } } = message;
+
+  await bot.sendMessage(id, `✅ Gotcha: ${text}`);
 
   if(entities && entities[0].type === 'bot_command') {
     return handleCommand(id, text, username);
