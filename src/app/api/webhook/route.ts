@@ -66,10 +66,11 @@ async function returnBalance(ethAddress: string, id: string) {
   }
 }
 
-async function handleCommand(id: string, text: string, username: string) {
+async function handleCommand(id: string, text: string, username: string = '') {
   let ethAddressOrEns = text.replace('@devconnect_griffith_bot', '').trim();
   let ethAddress = null;
-  let keyPair: keyPair | null = await kv.get(`user:${username}`);
+  let keyPair: keyPair | null = null;
+  if(username.length > 0) { keyPair = await kv.get(`user:${username}`); }
 
   switch (true) {
     case ethAddressOrEns.startsWith('/balanceaddr'):
@@ -126,11 +127,18 @@ async function handleCommand(id: string, text: string, username: string) {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const message = body.message;
-  const { chat: { id }, text, entities, from: { username } } = message;
-
-  if(entities && entities[0].type === 'bot_command') {
-    return handleCommand(id, text, username);
+  if(body.message) { 
+    const message = body.message 
+    const { chat: { id }, text, entities, from: { username } } = message;
+    if(entities && entities[0].type === 'bot_command') {
+      return handleCommand(id, text, username);
+    }
+  } else if(body.channel_post) {
+    const message = body.channel_post;
+    const { chat: { id }, text, entities } = message;
+    if(entities && entities[0].type === 'bot_command') {
+      return handleCommand(id, text);
+    }
   }
 
   // Ignore all other input
