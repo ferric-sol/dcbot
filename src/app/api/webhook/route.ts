@@ -98,8 +98,8 @@ async function handleCommand(id: string, text: string, username: string = '') {
     case ethAddressOrEns.startsWith('generate'):
       // No username, can't create an address
       // Don't do nothin
-      if(username.length > 0) { 
-        if(!keyPair) { 
+      if(username.length > 0) {
+        if(!keyPair) {
           const account = web3.eth.accounts.create();
           keyPair = {
             address: account.address,
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
   } else if(body.channel_post) {
     const message = body.channel_post;
     const { chat: { id }, text, entities } = message;
-    if(entities && entities[0].type === 'bot_command' || entities[0].type === 'mention') {
+    if(entities[0]?.type === 'bot_command' || entities[0]?.type === 'mention') {
       return handleCommand(id, text);
     }
   }
