@@ -68,13 +68,16 @@ async function returnBalance(ethAddress: string, id: string) {
 
 async function handleCommand(id: string, text: string, username: string = '') {
   let ethAddressOrEns = text.replace('@devconnect_griffith_bot', '').trim();
+  ethAddressOrEns = ethAddressOrEns.replace(/^\//, '').trim();
+
   let ethAddress = null;
   let keyPair: keyPair | null = null;
   if(username.length > 0) { keyPair = await kv.get(`user:${username}`); }
 
   switch (true) {
-    case ethAddressOrEns.startsWith('/balanceaddr'):
-      ethAddress = ethAddressOrEns.replace('/balanceaddr', '').trim();
+
+    case ethAddressOrEns.startsWith('balanceaddr'):
+      ethAddress = ethAddressOrEns.replace('balanceaddr', '').trim();
       if (ethAddress.length > 0) {
         await returnBalance(ethAddress, id);
       } else if (keyPair?.address) {
@@ -82,8 +85,8 @@ async function handleCommand(id: string, text: string, username: string = '') {
       }
       break;
 
-    case ethAddressOrEns.startsWith('/balance'):
-      ethAddressOrEns = ethAddressOrEns.replace('/balance', '').trim();
+    case ethAddressOrEns.startsWith('balance'):
+      ethAddressOrEns = ethAddressOrEns.replace('balance', '').trim();
       if (ethAddressOrEns.length > 0) {
         ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
         await returnBalance(ethAddress, id);
@@ -92,25 +95,29 @@ async function handleCommand(id: string, text: string, username: string = '') {
       }
       break;
 
-    case ethAddressOrEns.startsWith('/generate'):
-      if(!keyPair) { 
-        const account = web3.eth.accounts.create();
-        keyPair = {
-          address: account.address,
-          privateKey: account.privateKey,
-        };
+    case ethAddressOrEns.startsWith('generate'):
+      // No username, can't create an address
+      // Don't do nothin
+      if(username.length > 0) { 
+        if(!keyPair) { 
+          const account = web3.eth.accounts.create();
+          keyPair = {
+            address: account.address,
+            privateKey: account.privateKey,
+          };
 
-        try {
-          await kv.set(`user:${username}`, JSON.stringify(keyPair));
-        } catch (error) {
-          console.error('Error storing the key pair:', error);
+          try {
+            await kv.set(`user:${username}`, JSON.stringify(keyPair));
+          } catch (error) {
+            console.error('Error storing the key pair:', error);
+          }
         }
-      }
-      try {
-        const message = `✅ Key pair generated successfully:\n- Address: ${keyPair.address}`;
-        await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
-      } catch (error) {
-        console.error('Error sending message:', error);
+        try {
+          const message = `✅ Key pair generated successfully:\n- Address: ${keyPair.address}`;
+          await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
+        } catch (error) {
+          console.error('Error sending message:', error);
+        }
       }
       break;
 
@@ -136,7 +143,7 @@ export async function POST(request: Request) {
   } else if(body.channel_post) {
     const message = body.channel_post;
     const { chat: { id }, text, entities } = message;
-    if(entities && entities[0].type === 'bot_command') {
+    if(entities && entities[0].type === 'bot_command' || entities[0].type === 'mention') {
       return handleCommand(id, text);
     }
   }
