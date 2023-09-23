@@ -137,13 +137,15 @@ export async function POST(request: Request) {
   if(body.message) { 
     const message = body.message 
     const { chat: { id }, text, entities, from: { username } } = message;
-    if(entities && entities[0].type === 'bot_command') {
+    if(entities && entities[0]?.type === 'bot_command') {
       return handleCommand(id, text, username);
     }
   } else if(body.channel_post) {
     const message = body.channel_post;
     const { chat: { id }, text, entities } = message;
-    if(entities[0]?.type === 'bot_command' || entities[0]?.type === 'mention') {
+    // If it was a bot_command or an @mention where the bot was mentioned
+    // Respond, otherwise don't respond
+    if(entities && (entities[0]?.type === 'bot_command' || entities[0]?.type === 'mention' && text.match(/\@devconnect_griffith_bot/))) {
       return handleCommand(id, text);
     }
   }
