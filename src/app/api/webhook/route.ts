@@ -67,7 +67,7 @@ async function returnBalance(ethAddress: string, id: string) {
 }
 
 async function handleCommand(id: string, text: string, username: string = '') {
-  let ethAddressOrEns = text.replace('@devconnect_griffith_bot', '').trim();
+  let ethAddressOrEns = text.replace('@DCFruitBot', '').trim();
   ethAddressOrEns = ethAddressOrEns.replace(/^\//, '').trim();
 
   let ethAddress = null;
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     const { chat: { id }, text, entities } = message;
     // If it was a bot_command or an @mention where the bot was mentioned
     // Respond, otherwise don't respond
-    if(entities && (entities[0]?.type === 'bot_command' || entities[0]?.type === 'mention' && text.match(/\@devconnect_griffith_bot/))) {
+    if(entities && (entities[0]?.type === 'bot_command' || entities[0]?.type === 'mention' && text.match(/\@DCFruitBot/))) {
       return handleCommand(id, text);
     }
   }
