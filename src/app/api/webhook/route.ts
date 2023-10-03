@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import Web3 from 'web3';
 import TelegramBot from 'node-telegram-bot-api';
 import { createClient } from '@vercel/kv';
+import { createPublicClient, http, isAddress, formatEther } from 'viem'
+import { mainnet } from 'viem/chains'
+import { normalize } from 'viem/ens'
+import { privateKeyToAccount } from 'viem/accounts'
+import { generatePrivateKey } from 'viem/accounts'
 
-interface keyPair {
+interface KeyPair {
   address: string;
   privateKey: string;
 }
@@ -14,9 +18,14 @@ if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !ALCHEMY_URL || !TELEGRAM_API_KEY)
   throw new Error('Environment variables KV_REST_API_URL and KV_REST_API_TOKEN and ALCHEMY_URL and TELEGRAM_API_KEY must be defined');
 }
 
-const web3 = new Web3(ALCHEMY_URL)
 const bot = new TelegramBot(TELEGRAM_API_KEY.trim());
 
+const transport = http(ALCHEMY_URL);
+
+const client = createPublicClient({
+  chain: mainnet,
+  transport,
+})
 
 const kv = createClient({
   url: KV_REST_API_URL,
@@ -35,15 +44,15 @@ async function sendErrorResponse(id: string) {
 }
 
 async function returnBalance(ethAddress: string, id: string) {
-  if (!ethAddress || !web3.utils.isAddress(ethAddress)) {
+  if (!ethAddress || !isAddress(ethAddress)) {
     const message = 'Address not understood';
     await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
     return sendErrorResponse(id);
   }
 
   try {
-    const balanceWei = await web3.eth.getBalance(ethAddress);
-    const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
+    const balanceWei = await client.getBalance({address: ethAddress});
+    const balanceEth = formatEther(balanceWei);
     
     const balanceWeiNumber = Number(balanceWei);
     const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth} ETH\nHave a great day! 👋🏻`;
@@ -56,8 +65,7 @@ async function returnBalance(ethAddress: string, id: string) {
           status: 200,
         }
       );
-    } else {
-    }
+    } 
   } catch (error) {
     console.error(error);
     const message = 'Error fetching balance';
@@ -71,7 +79,7 @@ async function handleCommand(id: string, text: string, username: string = '') {
   ethAddressOrEns = ethAddressOrEns.replace(/^\//, '').trim();
 
   let ethAddress = null;
-  let keyPair: keyPair | null = null;
+  let keyPair: KeyPair | null = null;
   if(username.length > 0) { keyPair = await kv.get(`user:${username}`); }
 
   switch (true) {
@@ -88,8 +96,12 @@ async function handleCommand(id: string, text: string, username: string = '') {
     case ethAddressOrEns.startsWith('balance'):
       ethAddressOrEns = ethAddressOrEns.replace('balance', '').trim();
       if (ethAddressOrEns.length > 0) {
-        ethAddress = Buffer.from(await web3.eth.ens.getAddress(ethAddressOrEns)).toString();
-        await returnBalance(ethAddress, id);
+        const ensAddress = await client.getEnsAddress({ name: normalize(ethAddressOrEns) });
+        if (ensAddress !== null) {
+          await returnBalance(ensAddress, id);
+        } else {
+          return await sendErrorResponse(id);
+        }
       } else if (keyPair?.address) {
         await returnBalance(keyPair?.address, id);
       }
@@ -100,10 +112,12 @@ async function handleCommand(id: string, text: string, username: string = '') {
       // Don't do nothin
       if(username.length > 0) {
         if(!keyPair) {
-          const account = web3.eth.accounts.create();
+          const privateKey = generatePrivateKey();
+          const account = privateKeyToAccount(privateKey);
+
           keyPair = {
             address: account.address,
-            privateKey: account.privateKey,
+            privateKey: privateKey,
           };
 
           try {
