@@ -10,7 +10,40 @@ yarn dev
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Do a POST to [http://localhost:3000/api/webhook](http://localhost:3000/api/webhook) with your browser to see the result.
+
+Eg payload from telegram bot api:
+
+```
+{
+    "update_id": 63295307,
+    "message": {
+        "message_id": 44,
+        "from": {
+            "id": 1051154550,
+            "is_bot": false,
+            "first_name": "Ferric",
+            "username": "pherric",
+            "language_code": "en"
+        },
+        "chat": {
+            "id": 1051154550,
+            "first_name": "Ferric",
+            "username": "pherric",
+            "type": "private"
+        },
+        "date": 1696323343,
+        "text": "/balance",
+        "entities": [
+            {
+                "offset": 0,
+                "length": 8,
+                "type": "bot_command"
+            }
+        ]
+    }
+}
+```
 
 ### Telegram Bot
 The bot responds to commands defined in src/app/api/webhook/route.ts
