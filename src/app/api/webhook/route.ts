@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import TelegramBot from 'node-telegram-bot-api';
 import { createClient } from '@vercel/kv';
 import { createPublicClient, http, isAddress, formatEther } from 'viem'
-import { mainnet } from 'viem/chains'
+import { gnosis } from 'viem/chains'
 import { normalize } from 'viem/ens'
 import { privateKeyToAccount } from 'viem/accounts'
 import { generatePrivateKey } from 'viem/accounts'
@@ -12,18 +12,18 @@ interface KeyPair {
   privateKey: string;
 }
 
-const { KV_REST_API_URL, KV_REST_API_TOKEN, ALCHEMY_URL, TELEGRAM_API_KEY } = process.env;
+const { KV_REST_API_URL, KV_REST_API_TOKEN, GNOSIS_URL, TELEGRAM_API_KEY } = process.env;
 
-if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !ALCHEMY_URL || !TELEGRAM_API_KEY) {
+if (!KV_REST_API_URL || !KV_REST_API_TOKEN || !GNOSIS_URL || !TELEGRAM_API_KEY) {
   throw new Error('Environment variables KV_REST_API_URL and KV_REST_API_TOKEN and ALCHEMY_URL and TELEGRAM_API_KEY must be defined');
 }
 
 const bot = new TelegramBot(TELEGRAM_API_KEY.trim());
 
-const transport = http(ALCHEMY_URL);
+const transport = http(GNOSIS_URL);
 
 const client = createPublicClient({
-  chain: mainnet,
+  chain: gnosis,
   transport,
 })
 
