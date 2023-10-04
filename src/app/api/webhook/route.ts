@@ -55,7 +55,7 @@ async function returnBalance(ethAddress: string, id: string) {
     const balanceEth = formatEther(balanceWei);
     
     const balanceWeiNumber = Number(balanceWei);
-    const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth} ETH\nHave a great day! 👋🏻`;
+    const message = `✅ The balance for address: *"${ethAddress}"* is ${balanceEth} xDAI\nHave a great day! 👋🏻`;
     await bot.sendMessage(id, message, { parse_mode: 'Markdown' });
 
     if (Number.isSafeInteger(balanceWeiNumber)) {
